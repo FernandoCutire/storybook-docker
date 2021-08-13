@@ -1,70 +1,174 @@
-# Getting Started with Create React App
+# Aprende de contenedores: create-react-app + Storybook + Docker (Con repositorio)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Status: No empezado
+¿Publicado?: No
 
-## Available Scripts
+En este artículo crearemos una imagen de docker con base a una aplicación en storybook, esto servirá para que otros desarrolladores puedan correr la aplicación sin proble,as
 
-In the project directory, you can run:
+## 📰 En este artículo aprenderás
 
-### `npm start`
+1. Cómo empaquetar una aplicación en un contenedor docker
+2. El desarrollo de un contenedor para una aplicación JS
+3. Cómo ver los puertos del contenedor
+4. Solución a errores comunes al empaquetar SPA (Single Page Application)
+5. Repositorio con código completo para que puedas [probar la aplicación](https://github.com/FernandoCutire/storybook-docker) 
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Tabla de Contenidos
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## ¿Por qué docker?
 
-### `npm test`
+Respuesta corta, te lo han pedido subirán el storybook a la nube y quieren tener tu sistema de diseño en un pipeline siempre atento.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Puedes leer más sobre docker en mi artículo de Docker para desarrolladores
 
-### `npm run build`
+## Comenzando
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Para este ejemplo decidí usar create-react-app para la aplicación `npx create-react-app storybook-docker`. Recuerda que storybook en su documentación dice que su comando `sb init` no funciona sin tener una aplicación antes corriendo, así que es mejor que sigas los pasos.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Paso 1: Crea la aplicación
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+`npx create-react-app storybook-docker`
 
-### `npm run eject`
+Si ya tienes tu app, usa tu aplicación y ve al siguiente paso
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Paso 2: Storybook
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+`sb init`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Nota: No funciona en proyectos vacíos por eso usar primero react app
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Si ya tienes tu storybook ahora sí vayamos a dockerizar.
 
-## Learn More
+### Paso 3: Docker
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Para este paso, es recomendable que entiendas como funciona un Dockerfile, te lo explico mejor [aquí](https://github.com/FernandoCutire/storybook-docker)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Este es el código que uso para mi Dockerfile
 
-### Code Splitting
+```docker
+# Usar una imagen  
+FROM node:current-alpine3.14
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# Establecer el directorio de trabajo de nuestro contenedor
+WORKDIR /usr/src/app
 
-### Analyzing the Bundle Size
+# Copiar el package.json a la carpeta /app de nuestro contenedor
+COPY package.json /app
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+# Copiará otros archivos de la aplicación
+COPY . .
 
-### Making a Progressive Web App
+# Ejecutar el comando npm set progress=false && npm install
+RUN npm set progress=false && npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+# Exponer el puerto 8086 de el contenedor docker, fin de documentación
+EXPOSE 8086
 
-### Advanced Configuration
+# Correrá este comando al final cuando se esté corriendo el contenedor
+CMD ["npm", "start"]
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Puedes realizar este y añadirle según tus necesidades, yo solo necesito esos comandos así que lo dejo así.
 
-### Deployment
+### Paso 4: docker-compose
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Yo para este proyecto uso docker-compose.yml
 
-### `npm run build` fails to minify
+Puede que no sea necesario tomando en cuenta que solo es una aplicación pero a la hora de manejar más en tu aplicación puede serte útil, así que dejó el código.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```docker
+version: "3"
+services:
+  storybook:
+    ports:
+      - "8086:8086"
+    build: .
+```
+
+Aquí se expone el puerto 8086.
+
+Corre tu aplicación con un `docker-compose up`
+
+### Adicional
+
+Algo que me dió problema fue en el package.json, ya que corría mi aplicación dentro del docker pero no podía observarla en el navegador.
+
+Así que revisando mi package.json, expuse el puerto 8086 también ya que por defecto viene otro, te recomiendo que si te da problemas también lo hagas.
+
+```json
+{
+  "name": "storybook-docker",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.14.1",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^12.8.3",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "4.0.3",
+    "web-vitals": "^1.1.2"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "storybook": "start-storybook -p 8086",
+    "build-storybook": "build-storybook -s public"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.stories.*"
+        ],
+        "rules": {
+          "import/no-anonymous-default-export": "off"
+        }
+      }
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@storybook/addon-actions": "^6.3.7",
+    "@storybook/addon-essentials": "^6.3.7",
+    "@storybook/addon-links": "^6.3.7",
+    "@storybook/node-logger": "^6.3.7",
+    "@storybook/preset-create-react-app": "^3.2.0",
+    "@storybook/react": "^6.3.7"
+  }
+}
+```
+
+Fijate en el comando que dice `"storybook": "start-storybook -p 8086"`, ese sería el que deberías de cambiar.
+
+## 🔥 Recapitulando
+
+Repasemos lo que aprendiste
+
+- Tener una aplicación corriendo antes de iniciar storybook, una app como la que te genera create-react-app
+- Entender como funciona un Dockerfile, para añadir capas según lo necesario
+- Verificar los puertos después de montar tu contenedor
+- Revisar el package.json con el comando que corras para inicializar storybook por si te da problemas al momento de visualizar tu contenedor en el servidor local.
+
+## 🔚 Fin
+
+Sabes como dockerizar una SPA n un entorno de desarrollo, recuerda el repositorio de github, para que tengas un acceso a todo el código,
+
+[GitHub - FernandoCutire/storybook-docker: This is how you can dockerize a storybook project](https://github.com/FernandoCutire/storybook-docker)

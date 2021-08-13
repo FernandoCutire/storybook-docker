@@ -1,5 +1,5 @@
 {
-  "name": "sample-react-app",
+  "name": "storybook-docker",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
