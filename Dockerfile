@@ -17,4 +17,4 @@ RUN npm set progress=false && npm install
 EXPOSE 8086
 
 # Correrá este comando al final cuando se esté corriendo el contenedor
-CMD ["npm", "start"]
+CMD ["npm", "run", "storybook"]
